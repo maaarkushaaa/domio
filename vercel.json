@@ -1,9 +1,8 @@
 {
-  "public": true,
   "rewrites": [
     {
       "source": "/",
-      "destination": "/configurator_2508f3617e1046cba5b985f3a7ea393a_page.html"
+      "destination": "/configurator_assets/configurator_2508f3617e1046cba5b985f3a7ea393a_page.html"
     }
   ],
   "headers": [

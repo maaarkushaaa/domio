@@ -1,11 +1,14 @@
 {
-  "version": 2,
   "public": true,
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/configurator_2508f3617e1046cba5b985f3a7ea393a_page.html"
+    }
+  ],
   "headers": [
     {
-      "source": "/configurator_assets/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -20,16 +23,6 @@
           "value": "Content-Type, Authorization"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/configurator_assets/configurator_2508f3617e1046cba5b985f3a7ea393a_page.html"
-    },
-    {
-      "source": "/wardrobe_config_rubles.json",
-      "destination": "/configurator_assets/wardrobe_config_rubles.json"
     }
   ]
 }

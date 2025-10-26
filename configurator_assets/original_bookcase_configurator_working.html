@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<!-- ORIGINAL BOOKCASE CONFIGURATOR - Downloaded from https://www.pickawood.com/en/configurator/66ee895bd1034bde9ed7f200c0332261 -->
+<script>
+// ORIGINAL BOOKCASE API INTERCEPTOR - Must be FIRST
+(function() {
+    console.log('[ORIGINAL-BOOKCASE] Starting Original Bookcase API Interceptor...');
+    
+    // Intercept fetch
+    const originalFetch = window.fetch;
+    window.fetch = async function(input, init) {
+        const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        
+        if (url.includes('condor.pickawood.com/configuration')) {
+            console.log('[ORIGINAL-BOOKCASE] 🎯 Intercepting fetch:', url);
+            return await handleConfigRequest(url);
+        }
+        
+        return originalFetch(input, init);
+    };
+    
+    // Intercept XMLHttpRequest
+    const originalXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        const xhr = new originalXHR();
+        const originalOpen = xhr.open;
+        const originalSend = xhr.send;
+        
+        xhr.open = function(method, url, ...args) {
+            this._url = url;
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+        
+        xhr.send = function(body) {
+            if (this._url && this._url.includes('condor.pickawood.com/configuration')) {
+                console.log('[ORIGINAL-BOOKCASE] 🎯 Intercepting XHR:', this._url);
+                
+                handleConfigRequestForXHR(this._url).then(responseText => {
+                    Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                    Object.defineProperty(this, 'status', { value: 200, writable: false });
+                    Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
+                    
+                    if (this.onreadystatechange) this.onreadystatechange();
+                    if (this.onload) this.onload();
+                }).catch(error => {
+                    console.error('[ORIGINAL-BOOKCASE] XHR Error:', error);
+                    return originalSend.apply(this, arguments);
+                });
+                
+                return;
+            }
+            
+            return originalSend.apply(this, arguments);
+        };
+        
+        return xhr;
+    };
+    
+    async function handleConfigRequest(url) {
+        try {
+            // Load original shelf config
+            const shelfResponse = await originalFetch('/shelf_config_original_gb.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            
+            if (shelfResponse.ok) {
+                const shelfConfig = await shelfResponse.json();
+                console.log('[ORIGINAL-BOOKCASE] ✅ Original shelf config loaded');
+                
+                // Add missing fields that conf2.umd.min.js expects
+                shelfConfig.productId = 2000003;
+                shelfConfig.type = "shelf";
+                shelfConfig.component = "shelf";
+                
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[ORIGINAL-BOOKCASE] ✅ Wardrobe config loaded for Russian translations');
+                    
+                    // Merge Russian translations into shelf config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to shelf config
+                        shelfConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+                        
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+                        
+                        console.log('[ORIGINAL-BOOKCASE] ✅ Russian translations merged into shelf config');
+                        console.log('[ORIGINAL-BOOKCASE] 🔍 Translation keys count:', Object.keys(wardrobeConfig.settings.translations).length);
+                    }
+                }
+                
+                console.log('[ORIGINAL-BOOKCASE] ✅ Shelf config ready with Russian translations');
+                
+                return new Response(JSON.stringify(shelfConfig), {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('[ORIGINAL-BOOKCASE] Error:', error);
+            throw error;
+        }
+    }
+    
+    async function handleConfigRequestForXHR(url) {
+        try {
+            // Load original shelf config
+            const shelfResponse = await originalFetch('/shelf_config_original_gb.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            
+            if (shelfResponse.ok) {
+                const shelfConfig = await shelfResponse.json();
+                console.log('[ORIGINAL-BOOKCASE] ✅ Original shelf config loaded for XHR');
+                
+                // Add missing fields that conf2.umd.min.js expects
+                shelfConfig.productId = 2000003;
+                shelfConfig.type = "shelf";
+                shelfConfig.component = "shelf";
+                
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[ORIGINAL-BOOKCASE] ✅ Wardrobe config loaded for Russian translations XHR');
+                    
+                    // Merge Russian translations into shelf config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to shelf config
+                        shelfConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+                        
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+                        
+                        console.log('[ORIGINAL-BOOKCASE] ✅ Russian translations merged into shelf config XHR');
+                    }
+                }
+                
+                console.log('[ORIGINAL-BOOKCASE] ✅ Shelf config ready with Russian translations XHR');
+                
+                return JSON.stringify(shelfConfig);
+            }
+        } catch (error) {
+            console.error('[ORIGINAL-BOOKCASE] XHR Error:', error);
+            throw error;
+        }
+    }
+    
+    console.log('[ORIGINAL-BOOKCASE] ✅ API Interceptor ready');
+})();
+</script>
+
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="csrf-token" content="is5RrZJQnYyW7i0qj7VzxvQKUsUfdPklSelkUgi3">
+<meta name="og:title" content="Design your own bookcase | Bespoke shelving configurator by Pickawood™">
+<meta name="keywords" content="">
+<meta name="description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+<meta name="og:description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TFQGD2');</script>
+<!-- End Google Tag Manager -->
+
+<script src="https://cdn.ablyft.com/s/20190247.js"></script>
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://www.pickawood.com/" />
+<meta property="og:image" content="/data/pw/pgthumbs/l1_2697.png" />
+<link rel="preconnect" href="https://sentry.io">
+<link rel="apple-touch-icon" sizes="57x57" href="/gfx/favicon/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/gfx/favicon/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/gfx/favicon/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/gfx/favicon/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/gfx/favicon/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/gfx/favicon/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/gfx/favicon/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/gfx/favicon/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/gfx/favicon/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/gfx/favicon/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/gfx/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/gfx/favicon/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/gfx/favicon/favicon-16x16.png">
+<link rel="manifest" href="/gfx/favicon/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/gfx/favicon/ms-icon-144x144.png">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/mix-manifest.json?v=5">
+<link rel="mask-icon" href="/gfx/favicon/safari-pinned-tab.svg?v=5" color="#5bbad5">
+<link rel="shortcut icon" href="/gfx/favicon/favicon.ico?v=5" type="image/x-icon">
+<meta name="apple-mobile-web-app-title" content="Pickawood">
+<meta name="application-name" content="Pickawood">
+<link rel="preconnect" href="https://images.pickawood.com">
+<meta name="sentry-trace" content="97d738ebfa0e4e2dbdbedae53988834a-1749ef103af84e4d-1"/><meta name="traceparent" content="00-97d738ebfa0e4e2dbdbedae53988834a-1749ef103af84e4d-01"/><meta name="baggage" content="sentry-trace_id=97d738ebfa0e4e2dbdbedae53988834a,sentry-sample_rate=0.1,sentry-transaction=%2F%7Blocale%7D%2F%7Burl%7D%2F%7Bidentifier%7D,sentry-public_key=333b600eebaa452cb4fa9306c2f59911,sentry-environment=production,sentry-sampled=true"/>
+<title>Design your own bookcase | Bespoke shelving configurator by Pickawood™</title>
+<link rel="alternate" hreflang="x-default" href="https://www.pickawood.com/de/configurator/conf2"/>
+<link rel="alternate" hreflang="de-DE" href="https://www.pickawood.com/de/configurator/conf2"/>
+<link rel="alternate" hreflang="de-CH" href="https://www.pickawood.com/ch/configurator/conf2"/>
+<link rel="alternate" hreflang="de-AT" href="https://www.pickawood.com/at/configurator/conf2"/>
+<link rel="alternate" hreflang="en" href="https://www.pickawood.com/eu/configurator/conf2"/>
+<link rel="alternate" hreflang="fr-FR" href="https://www.pickawood.com/fr/configurateur/conf2"/>
+<link rel="alternate" hreflang="it-IT" href="https://www.pickawood.com/it/configurator/conf2"/>
+<link rel="alternate" hreflang="nl-NL" href="https://www.pickawood.com/nl/configurator/conf2"/>
+<link rel="alternate" hreflang="nl-BE" href="https://www.pickawood.com/be/configurator/conf2"/>
+<link rel="stylesheet" href="/css/app.css?id=41943a493838b4792795c3463ab0003b" type="text/css" media="screen">
+<style>* { box-sizing: border-box; } body {margin: 0;}</style>
+
+<script>window.env = {"SENTRY_LARAVEL_DSN":"https:\/\/333b600eebaa452cb4fa9306c2f59911@sentry.io\/2404864","POPUP_API":"https:\/\/www.pickawood.com\/api\/popups\/valid","IS_PRODUCTION":true};</script>
+
+<script>
+// ORIGINAL BOOKCASE CONFIGURATION - Downloaded from original page
+window.conf2config = {"productId":2000003,"countryId":16,"locale":"en","type":"shelf","component":"shelf","configurationId":"66ee895bd1034bde9ed7f200c0332261","configurationUrl":"https:\/\/www.pickawood.com\/en\/load-configuration\/66ee895bd1034bde9ed7f200c0332261","configUrl":"https:\/\/condor.pickawood.com\/configuration\/2000003\/en\/GB","configurationSaveUrl":"\/en\/configurator","configurationCartUrl":"\/en\/cart\/configuration","cartUrl":"https:\/\/www.pickawood.com\/en\/cart","configurationLoadUrl":"\/en\/configurator","configuratorEntryList":{"items":[{"product":"shelf","type":"configurable","hash":"66ee895bd1034bde9ed7f200c0332261","image":{"default":{"path":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/product_images\/product_regale_737x414.png","width":737,"height":414,"alt":"Shelving"},"sources":[{"type":"image\/webp","media":"","width":null,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/product_images\/_thumb_webp\/product_regale_737x414.webp"}]},"hover_image":{"default":{"path":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/hover_regale_768x768.jpg","width":768,"height":768,"alt":"Shelving"},"sources":[{"type":"image\/webp","media":"(max-width: 750px)and (min-resolution: 2dppx)","width":750,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/_thumb_375-2x\/hover_regale_768x768.webp"},{"type":"image\/webp","media":"","width":null,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/_thumb_webp\/hover_regale_768x768.webp"}]},"title":"Shelving","badge":"","icon":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/icons_logos\/ic_service_saw.svg","text":"Quality craftsmanship from the experts","link":"https:\/\/www.pickawood.com\/en\/configurator\/66ee895bd1034bde9ed7f200c0332261","is_small_chip":0,"sort_order":0}]},"resources":{"phone":"0330 80 848 70","email":"support@pickawood.com","appointmentUrl":"\/en\/appointment"}};
+window.isProduction = true;
+window.conf2config.noLimits = false;
+
+console.log('[ORIGINAL-BOOKCASE] 🔧 window.conf2config:', window.conf2config);
+
+// Global variables
+window.lang = "en";
+window.locale = "en";
+window.exchange_rate = "0.88";
+window.currency_shortcut_shop = "GBP";
+window.currency_symbol = "£";
+window.currency_position = "0";
+window.BASEURL = "https://www.pickawood.com";
+window.cdn = "https://www.pickawood.com";
+
+// Set up translations
+window.translations = {
+    "en": {}
+};
+
+// Load translations from wardrobe config
+fetch('/wardrobe_config_rubles.json')
+    .then(response => response.json())
+    .then(config => {
+        if (config.settings && config.settings.translations) {
+            window.translations.en = config.settings.translations;
+            console.log('[ORIGINAL-BOOKCASE] ✅ Russian translations loaded');
+        }
+    })
+    .catch(error => {
+        console.warn('[ORIGINAL-BOOKCASE] ⚠️ Could not load Russian translations:', error);
+    });
+</script>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="conf2-preloader" id="conf2-preloader">
+        <div class="conf2-preloader-body">
+            <img class="conf2-preloader-image" src="/gfx/conf2/loader/shelf.gif" alt="conf-loader"/>
+            The configurator is loading...
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <main id="main" class="">
+        <div id="conf2"></div>
+        <div class="container-fluid container-inner" id="conf2-content" style="margin-top: 0;">
+            <article class="article-wrap bg-white article-width-wide pt-none pb-none" data-restriction-type="exclude_from">
+                <div class="article-container container-fluid">
+                    <div class="row">
+                        <div id="67e188fd85100" data-columnid="67e188fd85100" class="col-md-12">
+                            <h1 class="h1 text-start h3">3D Bookcase & Shelving Configurator</h1>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            <article class="article-wrap bg-white article-width-wide pt-none pb-none" data-restriction-type="exclude_from">
+                <div class="article-container container-fluid">
+                    <div class="row">
+                        <div id="67e188fd85203" data-columnid="67e188fd85203" class="col-md-12">
+                            <h2 class="h1 text-start h5">Design your own bookcase</h2>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+    
+    <!-- Load conf2.umd.min.js -->
+    <script defer src="/js/conf2.umd.min.js?id=84dac4f25cc416e009e009428de29a47"></script>
+    
+    <!-- Initialization Script -->
+    <script>
+        window.addEventListener('load', function() {
+            console.log('[ORIGINAL-BOOKCASE] 📄 Page loaded');
+            console.log('[ORIGINAL-BOOKCASE] 📄 Vue:', window.Vue ? '✅' : '❌');
+            console.log('[ORIGINAL-BOOKCASE] 📄 conf2config:', window.conf2config);
+            
+            // Hide preloader after a short delay
+            setTimeout(function() {
+                const preloader = document.getElementById('conf2-preloader');
+                if (preloader) {
+                    preloader.style.display = 'none';
+                }
+            }, 2000);
+            
+            // Check for conf2
+            let checkCount = 0;
+            const maxChecks = 30;
+            
+            const conf2Interval = setInterval(function() {
+                checkCount++;
+                
+                if (window.conf2) {
+                    console.log('[ORIGINAL-BOOKCASE] ✅ window.conf2 found!');
+                    console.log('[ORIGINAL-BOOKCASE] 📋 conf2 keys:', Object.keys(window.conf2));
+                    clearInterval(conf2Interval);
+                    
+                    // Hide preloader
+                    const preloader = document.getElementById('conf2-preloader');
+                    if (preloader) {
+                        preloader.style.display = 'none';
+                    }
+                } else if (checkCount >= maxChecks) {
+                    console.error('[ORIGINAL-BOOKCASE] ❌ conf2 not found after', checkCount, 'checks');
+                    clearInterval(conf2Interval);
+                    
+                    // Hide preloader and show error
+                    const preloader = document.getElementById('conf2-preloader');
+                    if (preloader) {
+                        preloader.innerHTML = '<div style="text-align: center;"><h2>Error loading configurator</h2><p>Check browser console for details</p></div>';
+                    }
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

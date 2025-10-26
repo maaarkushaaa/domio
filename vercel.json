@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/configurator_assets/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/configurator_assets/configurator_2508f3617e1046cba5b985f3a7ea393a_page.html"
+    },
+    {
+      "source": "/wardrobe_config_rubles.json",
+      "destination": "/configurator_assets/wardrobe_config_rubles.json"
+    }
+  ]
+}
+

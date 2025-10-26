@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.vue%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.vue%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.vue%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://sentry.io/api/2404864/envelope/?sentry_key=333b600eebaa452cb4fa9306c2f59911&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.119.2",
+    "type": "fetch",
+    "size": 0
+  },
+  {
+    "url": "https://www.pickawood.com/api/ping",
+    "type": "xmlhttprequest",
+    "size": 0
+  },
+  {
+    "url": "https://www.pickawood.com/api/popups/valid/?url=/en/configurator/conf2",
+    "type": "fetch",
+    "size": 0
+  }
+]

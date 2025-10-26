@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<!-- API CONFIGURATOR DELAYED LOADING - Loads conf2.umd.min.js after config is ready -->
+<script>
+// API CONFIGURATOR INTERCEPTOR - Must be FIRST
+(function() {
+    console.log('[API-CONFIGURATOR-DELAYED] Starting API Configurator Interceptor...');
+    
+    // Intercept fetch
+    const originalFetch = window.fetch;
+    window.fetch = async function(input, init) {
+        const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        console.log('[API-CONFIGURATOR-DELAYED] 🔍 Fetch request:', url);
+        
+        if (url.includes('condor.pickawood.com/configuration') || url.includes('/configuration/')) {
+            console.log('[API-CONFIGURATOR-DELAYED] 🎯 Intercepting fetch:', url);
+            return await handleConfigRequest(url);
+        }
+        
+        return originalFetch(input, init);
+    };
+    
+    // Intercept XMLHttpRequest
+    const originalXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        const xhr = new originalXHR();
+        const originalOpen = xhr.open;
+        const originalSend = xhr.send;
+        
+        xhr.open = function(method, url, ...args) {
+            this._url = url;
+            console.log('[API-CONFIGURATOR-DELAYED] 🔍 XHR open:', method, url);
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+        
+        xhr.send = function(body) {
+            if (this._url && (this._url.includes('condor.pickawood.com/configuration') || this._url.includes('/configuration/'))) {
+                console.log('[API-CONFIGURATOR-DELAYED] 🎯 Intercepting XHR:', this._url);
+                
+                handleConfigRequestForXHR(this._url).then(responseText => {
+                    Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                    Object.defineProperty(this, 'status', { value: 200, writable: false });
+                    Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
+                    
+                    if (this.onreadystatechange) this.onreadystatechange();
+                    if (this.onload) this.onload();
+                }).catch(error => {
+                    console.error('[API-CONFIGURATOR-DELAYED] XHR Error:', error);
+                    return originalSend.apply(this, arguments);
+                });
+                
+                return;
+            }
+            
+            return originalSend.apply(this, arguments);
+        };
+        
+        return xhr;
+    };
+    
+    async function handleConfigRequest(url) {
+        console.log('[API-CONFIGURATOR-DELAYED] 🚀 handleConfigRequest called for:', url);
+        try {
+            // Load real API configuration
+            const apiResponse = await originalFetch('/shelf_config_from_api.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (apiResponse.ok) {
+                const apiConfig = await apiResponse.json();
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ Real API config loaded');
+
+                // Add missing fields that conf2.umd.min.js expects
+                apiConfig.productId = 2000003;
+                apiConfig.type = "shelf";
+                apiConfig.component = "shelf";
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ Added productId, type, component');
+
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[API-CONFIGURATOR-DELAYED] ✅ Wardrobe config loaded for Russian translations');
+
+                    // Merge Russian translations into API config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to API config
+                        apiConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        console.log('[API-CONFIGURATOR-DELAYED] ✅ Russian translations merged into API config');
+                        console.log('[API-CONFIGURATOR-DELAYED] 🔍 Translation keys count:', Object.keys(wardrobeConfig.settings.translations).length);
+                    }
+                }
+
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ API config ready with Russian translations');
+                console.log('[API-CONFIGURATOR-DELAYED] 🔍 Final config keys:', Object.keys(apiConfig));
+
+                return new Response(JSON.stringify(apiConfig), {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('[API-CONFIGURATOR-DELAYED] Error:', error);
+            throw error;
+        }
+    }
+
+    async function handleConfigRequestForXHR(url) {
+        console.log('[API-CONFIGURATOR-DELAYED] 🚀 handleConfigRequestForXHR called for:', url);
+        try {
+            // Load real API configuration
+            const apiResponse = await originalFetch('/shelf_config_from_api.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (apiResponse.ok) {
+                const apiConfig = await apiResponse.json();
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ Real API config loaded for XHR');
+
+                // Add missing fields that conf2.umd.min.js expects
+                apiConfig.productId = 2000003;
+                apiConfig.type = "shelf";
+                apiConfig.component = "shelf";
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ Added productId, type, component for XHR');
+
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[API-CONFIGURATOR-DELAYED] ✅ Wardrobe config loaded for Russian translations XHR');
+
+                    // Merge Russian translations into API config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to API config
+                        apiConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        console.log('[API-CONFIGURATOR-DELAYED] ✅ Russian translations merged into API config XHR');
+                    }
+                }
+
+                console.log('[API-CONFIGURATOR-DELAYED] ✅ API config ready with Russian translations XHR');
+                console.log('[API-CONFIGURATOR-DELAYED] 🔍 Final config keys for XHR:', Object.keys(apiConfig));
+
+                return JSON.stringify(apiConfig);
+            }
+        } catch (error) {
+            console.error('[API-CONFIGURATOR-DELAYED] XHR Error:', error);
+            throw error;
+        }
+    }
+
+    // More aggressive interception - intercept all network requests
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        console.log('[API-CONFIGURATOR-DELAYED] 🔍 XHR.prototype.open:', method, url);
+        if (url && (url.includes('condor.pickawood.com/configuration') || url.includes('/configuration/'))) {
+            console.log('[API-CONFIGURATOR-DELAYED] 🎯 Intercepting XHR.prototype:', url);
+            this._intercepted = true;
+            this._interceptedUrl = url;
+        }
+        return originalOpen.apply(this, [method, url, ...args]);
+    };
+
+    const originalSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function(body) {
+        if (this._intercepted) {
+            console.log('[API-CONFIGURATOR-DELAYED] 🚀 Sending intercepted XHR:', this._interceptedUrl);
+
+            handleConfigRequestForXHR(this._interceptedUrl).then(responseText => {
+                Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                Object.defineProperty(this, 'status', { value: 200, writable: false });
+                Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
+
+                if (this.onreadystatechange) this.onreadystatechange();
+                if (this.onload) this.onload();
+            }).catch(error => {
+                console.error('[API-CONFIGURATOR-DELAYED] XHR.prototype Error:', error);
+                return originalSend.apply(this, arguments);
+            });
+
+            return;
+        }
+
+        return originalSend.apply(this, arguments);
+    };
+
+    // Intercept dynamic imports and other loading methods
+    const originalImport = window.import;
+    if (originalImport) {
+        window.import = function(specifier) {
+            console.log('[API-CONFIGURATOR-DELAYED] 🔍 Dynamic import:', specifier);
+            return originalImport(specifier);
+        };
+    }
+
+    // Intercept document.createElement for script tags
+    const originalCreateElement = document.createElement;
+    document.createElement = function(tagName) {
+        const element = originalCreateElement.call(this, tagName);
+        if (tagName.toLowerCase() === 'script') {
+            const originalSrcSetter = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, 'src').set;
+            Object.defineProperty(element, 'src', {
+                set: function(value) {
+                    console.log('[API-CONFIGURATOR-DELAYED] 🔍 Script src:', value);
+                    if (value && (value.includes('condor.pickawood.com/configuration') || value.includes('/configuration/'))) {
+                        console.log('[API-CONFIGURATOR-DELAYED] 🎯 Intercepting script src:', value);
+                        // Don't set the src, we'll handle it differently
+                        return;
+                    }
+                    return originalSrcSetter.call(this, value);
+                },
+                get: function() {
+                    return this._src || '';
+                }
+            });
+        }
+        return element;
+    };
+
+    console.log('[API-CONFIGURATOR-DELAYED] ✅ API Interceptor ready');
+})();
+</script>
+
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="csrf-token" content="is5RrZJQnYyW7i0qj7VzxvQKUsUfdPklSelkUgi3">
+<meta name="og:title" content="Design your own bookcase | Bespoke shelving configurator by Pickawood™">
+<meta name="keywords" content="">
+<meta name="description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+<meta name="og:description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-TFQGD2');</script>
+<!-- End Google Tag Manager -->
+
+<script src="https://cdn.ablyft.com/s/20190247.js"></script>
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://www.pickawood.com/" />
+<meta property="og:image" content="/data/pw/pgthumbs/l1_2697.png" />
+<link rel="preconnect" href="https://sentry.io">
+<link rel="apple-touch-icon" sizes="57x57" href="/gfx/favicon/apple-icon-57x57.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/gfx/favicon/apple-icon-60x60.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/gfx/favicon/apple-icon-72x72.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/gfx/favicon/apple-icon-76x76.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/gfx/favicon/apple-icon-114x114.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/gfx/favicon/apple-icon-120x120.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/gfx/favicon/apple-icon-144x144.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/gfx/favicon/apple-icon-152x152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/gfx/favicon/apple-icon-180x180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/gfx/favicon/android-icon-192x192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/gfx/favicon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="/gfx/favicon/favicon-96x96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/gfx/favicon/favicon-16x16.png">
+<link rel="manifest" href="/gfx/favicon/manifest.json">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="msapplication-TileImage" content="/gfx/favicon/ms-icon-144x144.png">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="/mix-manifest.json?v=5">
+<link rel="mask-icon" href="/gfx/favicon/safari-pinned-tab.svg?v=5" color="#5bbad5">
+<link rel="shortcut icon" href="/gfx/favicon/favicon.ico?v=5" type="image/x-icon">
+<meta name="apple-mobile-web-app-title" content="Pickawood">
+<meta name="application-name" content="Pickawood">
+<link rel="preconnect" href="https://images.pickawood.com">
+<meta name="sentry-trace" content="97d738ebfa0e4e2dbdbedae53988834a-1749ef103af84e4d-1"/><meta name="traceparent" content="00-97d738ebfa0e4e2dbdbedae53988834a-1749ef103af84e4d-01"/><meta name="baggage" content="sentry-trace_id=97d738ebfa0e4e2dbdbedae53988834a,sentry-sample_rate=0.1,sentry-transaction=%2F%7Blocale%7D%2F%7Burl%7D%2F%7Bidentifier%7D,sentry-public_key=333b600eebaa452cb4fa9306c2f59911,sentry-environment=production,sentry-sampled=true"/>
+<title>Design your own bookcase | Bespoke shelving configurator by Pickawood™</title>
+<link rel="alternate" hreflang="x-default" href="https://www.pickawood.com/de/configurator/conf2"/>
+<link rel="alternate" hreflang="de-DE" href="https://www.pickawood.com/de/configurator/conf2"/>
+<link rel="alternate" hreflang="de-CH" href="https://www.pickawood.com/ch/configurator/conf2"/>
+<link rel="alternate" hreflang="de-AT" href="https://www.pickawood.com/at/configurator/conf2"/>
+<link rel="alternate" hreflang="en" href="https://www.pickawood.com/eu/configurator/conf2"/>
+<link rel="alternate" hreflang="fr-FR" href="https://www.pickawood.com/fr/configurateur/conf2"/>
+<link rel="alternate" hreflang="it-IT" href="https://www.pickawood.com/it/configurator/conf2"/>
+<link rel="alternate" hreflang="nl-NL" href="https://www.pickawood.com/nl/configurator/conf2"/>
+<link rel="alternate" hreflang="nl-BE" href="https://www.pickawood.com/be/configurator/conf2"/>
+<link rel="stylesheet" href="/css/app.css?id=41943a493838b4792795c3463ab0003b" type="text/css" media="screen">
+<style>* { box-sizing: border-box; } body {margin: 0;}</style>
+
+<script>window.env = {"SENTRY_LARAVEL_DSN":"https:\/\/333b600eebaa452cb4fa9306c2f59911@sentry.io\/2404864","POPUP_API":"https:\/\/www.pickawood.com\/api\/popups\/valid","IS_PRODUCTION":true};</script>
+
+<script>
+// DELAYED CONFIGURATION LOADING - Load config before conf2.umd.min.js
+console.log('[API-CONFIGURATOR-DELAYED] 🚀 Loading configuration...');
+
+// Load shelf config from API data
+const shelfConfigResponse = fetch('/shelf_config_from_api.json', {
+    method: 'GET',
+    credentials: 'same-origin'
+}).then(response => response.json());
+
+// Load wardrobe config for Russian translations
+const wardrobeConfigResponse = fetch('/wardrobe_config_rubles.json', {
+    method: 'GET',
+    credentials: 'same-origin'
+}).then(response => response.json());
+
+// Wait for both to complete
+Promise.all([shelfConfigResponse, wardrobeConfigResponse]).then(([shelfConfig, wardrobeConfig]) => {
+    console.log('[API-CONFIGURATOR-DELAYED] ✅ Both configs loaded');
+    
+    // Add missing fields that conf2.umd.min.js expects
+    shelfConfig.productId = 2000003;
+    shelfConfig.type = "shelf";
+    shelfConfig.component = "shelf";
+    console.log('[API-CONFIGURATOR-DELAYED] ✅ Added productId, type, component');
+    
+    // Merge Russian translations
+    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+        shelfConfig.translations = {
+            "en": wardrobeConfig.settings.translations
+        };
+        window.translations = {
+            "en": wardrobeConfig.settings.translations
+        };
+        console.log('[API-CONFIGURATOR-DELAYED] ✅ Russian translations merged');
+    }
+    
+    // Store the complete config globally
+    window.shelfConfigComplete = shelfConfig;
+    console.log('[API-CONFIGURATOR-DELAYED] ✅ Complete config stored in window.shelfConfigComplete');
+    console.log('[API-CONFIGURATOR-DELAYED] 🔍 Complete config keys:', Object.keys(shelfConfig));
+    
+    // Now load the conf2.umd.min.js script
+    console.log('[API-CONFIGURATOR-DELAYED] 🚀 Loading conf2.umd.min.js...');
+    const script = document.createElement('script');
+    script.src = '/js/conf2.umd.min.js?id=84dac4f25cc416e009e009428de29a47';
+    script.defer = true;
+    document.head.appendChild(script);
+    
+    console.log('[API-CONFIGURATOR-DELAYED] ✅ conf2.umd.min.js script added to DOM');
+}).catch(error => {
+    console.error('[API-CONFIGURATOR-DELAYED] Error loading configs:', error);
+});
+
+// API CONFIGURATOR CONFIGURATION - Uses real API data
+window.conf2config = {"productId":2000003,"countryId":16,"locale":"en","type":"shelf","component":"shelf","configurationId":"66ee895bd1034bde9ed7f200c0332261","configurationUrl":"https:\/\/www.pickawood.com\/en\/load-configuration\/66ee895bd1034bde9ed7f200c0332261","configUrl":"https:\/\/condor.pickawood.com\/configuration\/2000003\/en\/GB","configurationSaveUrl":"\/en\/configurator","configurationCartUrl":"\/en\/cart\/configuration","cartUrl":"https:\/\/www.pickawood.com\/en\/cart","configurationLoadUrl":"\/en\/configurator","configuratorEntryList":{"items":[{"product":"shelf","type":"configurable","hash":"66ee895bd1034bde9ed7f200c0332261","image":{"default":{"path":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/product_images\/product_regale_737x414.png","width":737,"height":414,"alt":"Shelving"},"sources":[{"type":"image\/webp","media":"","width":null,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/product_images\/_thumb_webp\/product_regale_737x414.webp"}]},"hover_image":{"default":{"path":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/hover_regale_768x768.jpg","width":768,"height":768,"alt":"Shelving"},"sources":[{"type":"image\/webp","media":"(max-width: 750px)and (min-resolution: 2dppx)","width":750,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/_thumb_375-2x\/hover_regale_768x768.webp"},{"type":"image\/webp","media":"","width":null,"srcset":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/conf_entry_items\/hover_images\/_thumb_webp\/hover_regale_768x768.webp"}]},"title":"Shelving","badge":"","icon":"https:\/\/images.pickawood.com\/data\/nettece-2021\/Site_structure\/icons_logos\/ic_service_saw.svg","text":"Quality craftsmanship from the experts","link":"https:\/\/www.pickawood.com\/en\/configurator\/66ee895bd1034bde9ed7f200c0332261","is_small_chip":0,"sort_order":0}]},"resources":{"phone":"0330 80 848 70","email":"support@pickawood.com","appointmentUrl":"\/en\/appointment"}};
+window.isProduction = true;
+window.conf2config.noLimits = false;
+
+console.log('[API-CONFIGURATOR-DELAYED] 🔧 window.conf2config:', window.conf2config);
+
+// Global variables
+window.lang = "en";
+window.locale = "en";
+window.exchange_rate = "0.88";
+window.currency_shortcut_shop = "GBP";
+window.currency_symbol = "£";
+window.currency_position = "0";
+window.BASEURL = "https://www.pickawood.com";
+window.cdn = "https://www.pickawood.com";
+
+// Set up translations
+window.translations = {
+    "en": {}
+};
+</script>
+
+<link rel="stylesheet" href="/css/conf2.umd.min.css?id=84dac4f25cc416e009e009428de29a47">
+<style>
+html, body, #app {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Load Vue.js first -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+<!-- conf2.umd.min.js will be loaded dynamically after config is ready -->
+
+<!-- Initialization Script -->
+<script>
+// Global error handler to catch Canvas errors
+window.addEventListener('error', function(e) {
+    if (e.message.includes('drawImage') && e.message.includes('CanvasRenderingContext2D')) {
+        console.warn('[API-CONFIGURATOR-DELAYED] Canvas error (non-critical):', e.message);
+        e.preventDefault(); // Prevent the error from breaking the app
+        return false;
+    }
+});
+
+window.addEventListener('load', function() {
+    console.log('[API-CONFIGURATOR-DELAYED] 📄 Page loaded');
+    console.log('[API-CONFIGURATOR-DELAYED] 📄 Vue:', window.Vue ? '✅' : '❌');
+    console.log('[API-CONFIGURATOR-DELAYED] 📄 conf2config:', window.conf2config);
+    
+    // Check if conf2 loaded
+    setTimeout(() => {
+        console.log('[API-CONFIGURATOR-DELAYED] 🔍 Checking conf2 after 2 seconds...');
+        
+        if (window.conf2) {
+            console.log('[API-CONFIGURATOR-DELAYED] ✅ window.conf2 found!');
+            console.log('[API-CONFIGURATOR-DELAYED] 📋 conf2 keys:', Object.keys(window.conf2));
+        } else {
+            console.log('[API-CONFIGURATOR-DELAYED] ❌ window.conf2 not found');
+        }
+        
+        if (window.Vue) {
+            console.log('[API-CONFIGURATOR-DELAYED] ✅ window.Vue found!');
+        } else {
+            console.log('[API-CONFIGURATOR-DELAYED] ❌ window.Vue not found');
+        }
+        
+        // Check if there are any global variables that might be related
+        const globalVars = Object.keys(window).filter(key =>
+            key.includes('conf') || key.includes('Conf') || key.includes('vue') || key.includes('Vue')
+        );
+        console.log('[API-CONFIGURATOR-DELAYED] 🔍 Global conf/vue variables:', globalVars);
+    }, 2000);
+});
+</script>
+
+</body>
+</html>
+

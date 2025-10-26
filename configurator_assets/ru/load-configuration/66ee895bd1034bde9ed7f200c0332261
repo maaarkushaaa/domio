@@ -1,0 +1,68 @@
+{
+  "conf2config": {
+    "productId": 2000003,
+    "countryId": 643,
+    "locale": "ru-RU",
+    "type": "wardrobe",
+    "configurationId": null,
+    "configurationUrl": null,
+    "configUrl": "/ru/load-configuration/66ee895bd1034bde9ed7f200c0332261",
+    "configurationSaveUrl": "/ru/configurator",
+    "configurationCartUrl": "/ru/cart/configuration",
+    "cartUrl": "https://www.pickawood.com/ru/cart",
+    "configurationLoadUrl": "/ru/configurator",
+    "configuratorEntryList": {
+      "items": [
+        {
+          "product": "wardrobe",
+          "type": "configurable",
+          "hash": "66ee895bd1034bde9ed7f200c0332261",
+          "image": {
+            "default": {
+              "path": "https://images.pickawood.com/data/nettece-2021/Site_structure/conf_entry_items/product_images/product_wardrobe_737x414.png",
+              "width": 737,
+              "height": 414,
+              "alt": "Wardrobe"
+            }
+          },
+          "hover_image": {
+            "default": {
+              "path": "https://images.pickawood.com/data/nettece-2021/Site_structure/conf_entry_items/hover_images/hover_wardrobe_768x768.jpg",
+              "width": 768,
+              "height": 768,
+              "alt": "Wardrobe"
+            }
+          },
+          "title": "Шкаф",
+          "subtitle": "Создайте свой индивидуальный шкаф",
+          "description": "Создайте свой индивидуальный шкаф с помощью нашего 3D конфигуратора",
+          "price": {
+            "from": 50000,
+            "currency": "RUB"
+          },
+          "url": "/ru/configurator/wardrobe"
+        }
+      ]
+    },
+    "translations": {
+      "conf2-exit-heading": "Внимание: Сохраните черновик!",
+      "conf2-exit-text": "Сохраните черновик перед выходом из конфигуратора. Вы получите ссылку, чтобы редактировать свой дизайн в любое время в будущем.",
+      "conf2-exit-email": "Введите адрес электронной почты",
+      "conf2-exit-email-error": "Пожалуйста, введите действительный адрес электронной почты.",
+      "conf2-exit-agb": "Я принимаю <a href=\"/ru/legal/data-privacy-statement\" target=\"_blank\">политику конфиденциальности</a>, пожалуйста, отправьте мне детали моей конфигурации.",
+      "conf2-exit-agb-error": "Пожалуйста, подтвердите политику конфиденциальности",
+      "conf2-exit-save": "Сохранить черновик",
+      "conf2-exit-back": "Вернуться к конфигуратору",
+      "conf2-exit-continue": "Удалить этот черновик навсегда",
+      "conf2-save-single_shelf": "Сохранение мебели",
+      "conf2-save-wall_cubby": "Сохранение мебели",
+      "conf2-save-wall_shelf": "Сохранение мебели",
+      "conf2-save-shelf": "Сохранение мебели",
+      "conf2-save-sideboard": "Сохранение мебели",
+      "conf2-save-wardrobe": "Сохранение мебели",
+      "conf2-save-modular": "Сохранение мебели",
+      "conf2-save-table": "Сохранение мебели",
+      "conf2-save-table_plate": "Сохранение мебели"
+    }
+  }
+}

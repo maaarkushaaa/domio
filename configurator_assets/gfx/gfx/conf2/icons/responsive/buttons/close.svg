@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="11.3" height="11.3">
+    <defs>
+        <style>.a{fill:#f7f7f7;}.b{fill:none;stroke:#323232;}.c{font-size:15px;font-family:Roboto-Light,
+            Roboto;font-weight:300;}.d{filter:url(#a);}
+        </style>
+    </defs>
+    <g transform="translate(0.4 0.4)">
+        <g>
+            <line class="b" y1="10.427" x2="10.427"/>
+            <line class="b" x1="10.427" y1="10.427"/>
+        </g>
+    </g>
+</svg>

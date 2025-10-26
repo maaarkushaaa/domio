@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<!-- SHELF CONFIGURATOR - Following EXACT wardrobe logic -->
+<script>
+// SHELF API INTERCEPTOR - Following wardrobe pattern EXACTLY
+(function() {
+    console.log('[SHELF-API-INTERCEPTOR] Starting shelf interception following wardrobe pattern...');
+    
+    // Simple fetch interceptor - EXACTLY like wardrobe
+    const originalFetch = window.fetch;
+    window.fetch = async function(input, init) {
+        const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        
+        // Intercept only condor.pickawood.com requests - EXACTLY like wardrobe
+        if (url.includes('condor.pickawood.com/configuration')) {
+            console.log('[SHELF-API-INTERCEPTOR] 🎯 INTERCEPTING:', url);
+            
+            try {
+                // Load shelf config from API data - but modify it for shelf
+                const response = await originalFetch('/shelf_config_from_api.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const shelfConfig = await response.json();
+                    console.log('[SHELF-API-INTERCEPTOR] ✅ Shelf API config loaded:', shelfConfig.type);
+                    
+                    // Modify for shelf - add missing fields
+                    shelfConfig.productId = 2000003;
+                    shelfConfig.type = "shelf";
+                    
+                    // Load wardrobe config for Russian translations
+                    const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (wardrobeResponse.ok) {
+                        const wardrobeConfig = await wardrobeResponse.json();
+                        console.log('[SHELF-API-INTERCEPTOR] ✅ Wardrobe config loaded for translations');
+                        
+                        // Merge Russian translations
+                        if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                            shelfConfig.translations = {
+                                "en": wardrobeConfig.settings.translations
+                            };
+                            window.translations = {
+                                "en": wardrobeConfig.settings.translations
+                            };
+                            console.log('[SHELF-API-INTERCEPTOR] ✅ Russian translations merged');
+                        }
+                    }
+                    
+                    return new Response(JSON.stringify(shelfConfig), {
+                        status: 200,
+                        statusText: 'OK',
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8'
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('[SHELF-API-INTERCEPTOR] Error:', error);
+            }
+        }
+        
+        return originalFetch(input, init);
+    };
+    
+    // Also intercept XMLHttpRequest - EXACTLY like wardrobe
+    const originalXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        const xhr = new originalXHR();
+        const originalOpen = xhr.open;
+        const originalSend = xhr.send;
+        
+        xhr.open = function(method, url, ...args) {
+            this._url = url;
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+        
+        xhr.send = function(body) {
+            if (this._url && this._url.includes('condor.pickawood.com/configuration')) {
+                console.log('[SHELF-API-INTERCEPTOR] 🎯 INTERCEPTING XHR:', this._url);
+                
+                // Same logic as fetch
+                originalFetch('/shelf_config_from_api.json').then(response => response.json()).then(shelfConfig => {
+                    shelfConfig.productId = 2000003;
+                    shelfConfig.type = "shelf";
+                    
+                    return originalFetch('/wardrobe_config_rubles.json').then(response => response.json()).then(wardrobeConfig => {
+                        if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                            shelfConfig.translations = {
+                                "en": wardrobeConfig.settings.translations
+                            };
+                            window.translations = {
+                                "en": wardrobeConfig.settings.translations
+                            };
+                        }
+                        
+                        Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                        Object.defineProperty(this, 'status', { value: 200, writable: false });
+                        Object.defineProperty(this, 'responseText', { value: JSON.stringify(shelfConfig), writable: false });
+                        
+                        if (this.onreadystatechange) this.onreadystatechange();
+                        if (this.onload) this.onload();
+                    });
+                }).catch(error => {
+                    console.error('[SHELF-API-INTERCEPTOR] XHR Error:', error);
+                    return originalSend.apply(this, arguments);
+                });
+                
+                return;
+            }
+            
+            return originalSend.apply(this, arguments);
+        };
+        
+        return xhr;
+    };
+    
+    console.log('[SHELF-API-INTERCEPTOR] ✅ Shelf interceptor ready');
+})();
+</script>
+
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="csrf-token" content="is5RrZJQnYyW7i0qj7VzxvQKUsUfdPklSelkUgi3">
+<meta name="og:title" content="Design your own bookcase | Bespoke shelving configurator by Pickawood™">
+<meta name="keywords" content="">
+<meta name="description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+<meta name="og:description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+
+<title>Design your own bookcase | Bespoke shelving configurator by Pickawood™</title>
+
+<link rel="stylesheet" href="/css/app.css?id=41943a493838b4792795c3463ab0003b" type="text/css" media="screen">
+<style>* { box-sizing: border-box; } body {margin: 0;}</style>
+
+<script>
+// EXACT window.conf2config following wardrobe pattern - but for shelf
+window.conf2config = {
+    "productId": 2000003,
+    "countryId": "RU",  // STRING like wardrobe!
+    "locale": "ru",     // Russian locale like wardrobe!
+    "type": "shelf",
+    "configurationId": "66ee895bd1034bde9ed7f200c0332261",
+    "configurationUrl": "https://www.pickawood.com/en/load-configuration/66ee895bd1034bde9ed7f200c0332261",
+    "configUrl": "https://condor.pickawood.com/configuration/2000003/en/GB",
+    "configurationSaveUrl": "/en/configurator",
+    "configurationCartUrl": "/en/cart/configuration",
+    "cartUrl": "https://www.pickawood.com/en/cart",
+    "configurationLoadUrl": "/en/configurator",
+    "configuratorEntryList": {
+        "items": [
+            {
+                "product": "shelf",
+                "type": "configurable",
+                "hash": "66ee895bd1034bde9ed7f200c0332261",
+                "image": {
+                    "default": {
+                        "path": "https://images.pickawood.com/data/nettece-2021/Site_structure/conf_entry_items/product_images/product_regale_737x414.png",
+                        "width": 737,
+                        "height": 414,
+                        "alt": "Shelving"
+                    }
+                },
+                "title": "Shelving",
+                "text": "Quality craftsmanship from the experts",
+                "link": "https://www.pickawood.com/en/configurator/66ee895bd1034bde9ed7f200c0332261"
+            }
+        ]
+    },
+    "resources": {
+        "phone": "0330 80 848 70",
+        "email": "support@pickawood.com",
+        "appointmentUrl": "/en/appointment"
+    }
+};
+
+window.isProduction = true;
+window.conf2config.noLimits = false; // EXACTLY like wardrobe
+
+console.log('[SHELF-CONFIG] 🔧 window.conf2config set:', window.conf2config);
+</script>
+
+</head>
+<body>
+    <!-- Preloader -->
+    <div id="preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="width: 50px; height: 50px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p>Loading Shelf Configurator...</p>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <article>
+                <h1>3D Bookcase & Shelving Configurator</h1>
+                <h2>Design your own bookcase</h2>
+                
+                <div id="configurator-container" style="min-height: 600px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <p style="text-align: center; color: #6c757d; font-size: 18px;">
+                        🏗️ Shelf Configurator will appear here...
+                    </p>
+                </div>
+            </article>
+        </div>
+    </main>
+    
+    <!-- Load Vue.js first -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script defer src="/js/conf2.umd.min.js?id=84dac4f25cc416e009e009428de29a47"></script>
+    
+    <!-- Initialization Script - Following wardrobe pattern EXACTLY -->
+    <script>
+        // Global error handler to catch Canvas errors
+        window.addEventListener('error', function(e) {
+            if (e.message.includes('drawImage') && e.message.includes('CanvasRenderingContext2D')) {
+                console.warn('[SHELF-CONFIG] Canvas error (non-critical):', e.message);
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        window.addEventListener('load', function() {
+            console.log('[SHELF-CONFIG] 📄 Page loaded');
+            console.log('[SHELF-CONFIG] 📄 Vue:', window.Vue ? '✅' : '❌');
+            console.log('[SHELF-CONFIG] 📄 conf2config:', window.conf2config);
+            
+            // Hide preloader after a short delay
+            setTimeout(function() {
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    preloader.style.display = 'none';
+                }
+            }, 2000);
+            
+            // Check if conf2 loaded - EXACTLY like wardrobe
+            setTimeout(function() {
+                console.log('[SHELF-CONFIG] 🔍 Checking conf2 after 3 seconds...');
+                
+                if (window.conf2) {
+                    console.log('[SHELF-CONFIG] ✅ window.conf2 found!');
+                    console.log('[SHELF-CONFIG] 📋 conf2 keys:', Object.keys(window.conf2));
+                    
+                    // Try to initialize configurator - EXACTLY like wardrobe
+                    try {
+                        if (window.conf2.init) {
+                            console.log('[SHELF-CONFIG] 🚀 Initializing configurator with conf2.init...');
+                            window.conf2.init(window.conf2config);
+                        } else if (window.conf2.create) {
+                            console.log('[SHELF-CONFIG] 🚀 Initializing configurator with conf2.create...');
+                            window.conf2.create(window.conf2config);
+                        } else if (window.conf2.default && window.conf2.default.init) {
+                            console.log('[SHELF-CONFIG] 🚀 Initializing configurator with conf2.default.init...');
+                            window.conf2.default.init(window.conf2config);
+                        } else {
+                            console.log('[SHELF-CONFIG] ❌ No suitable init method found');
+                        }
+                    } catch (error) {
+                        console.error('[SHELF-CONFIG] Configurator init error:', error);
+                    }
+                } else {
+                    console.log('[SHELF-CONFIG] ❌ window.conf2 not found');
+                }
+            }, 3000);
+        });
+    </script>
+
+</body>
+</html>
+

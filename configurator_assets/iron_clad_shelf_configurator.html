@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<!-- IRON-CLAD SHELF CONFIGURATOR - Based on exact analysis of original pickawood.com -->
+<script>
+// IRON-CLAD API INTERCEPTOR - Must be FIRST and EXACTLY like original
+(function() {
+    console.log('[IRON-CLAD] Starting Iron-Clad Shelf Configurator Interceptor...');
+    
+    // Intercept fetch EXACTLY like original
+    const originalFetch = window.fetch;
+    window.fetch = async function(input, init) {
+        const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        console.log('[IRON-CLAD] 🔍 Fetch request:', url);
+        
+        if (url.includes('condor.pickawood.com/configuration') || url.includes('/configuration/')) {
+            console.log('[IRON-CLAD] 🎯 Intercepting fetch:', url);
+            return await handleConfigRequest(url);
+        }
+        
+        return originalFetch(input, init);
+    };
+    
+    // Intercept XMLHttpRequest EXACTLY like original
+    const originalXHR = window.XMLHttpRequest;
+    window.XMLHttpRequest = function() {
+        const xhr = new originalXHR();
+        const originalOpen = xhr.open;
+        const originalSend = xhr.send;
+        
+        xhr.open = function(method, url, ...args) {
+            this._url = url;
+            console.log('[IRON-CLAD] 🔍 XHR open:', method, url);
+            return originalOpen.apply(this, [method, url, ...args]);
+        };
+        
+        xhr.send = function(body) {
+            if (this._url && (this._url.includes('condor.pickawood.com/configuration') || this._url.includes('/configuration/'))) {
+                console.log('[IRON-CLAD] 🎯 Intercepting XHR:', this._url);
+                
+                handleConfigRequestForXHR(this._url).then(responseText => {
+                    Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                    Object.defineProperty(this, 'status', { value: 200, writable: false });
+                    Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
+                    
+                    if (this.onreadystatechange) this.onreadystatechange();
+                    if (this.onload) this.onload();
+                }).catch(error => {
+                    console.error('[IRON-CLAD] XHR Error:', error);
+                    return originalSend.apply(this, arguments);
+                });
+                
+                return;
+            }
+            
+            return originalSend.apply(this, arguments);
+        };
+        
+        return xhr;
+    };
+    
+    // More aggressive interception - intercept XMLHttpRequest.prototype
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+        console.log('[IRON-CLAD] 🔍 XHR.prototype.open:', method, url);
+        if (url && (url.includes('condor.pickawood.com/configuration') || url.includes('/configuration/'))) {
+            console.log('[IRON-CLAD] 🎯 Intercepting XHR.prototype:', url);
+            this._intercepted = true;
+            this._interceptedUrl = url;
+        }
+        return originalOpen.apply(this, [method, url, ...args]);
+    };
+
+    const originalSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.send = function(body) {
+        if (this._intercepted) {
+            console.log('[IRON-CLAD] 🚀 Sending intercepted XHR:', this._interceptedUrl);
+            
+            handleConfigRequestForXHR(this._interceptedUrl).then(responseText => {
+                Object.defineProperty(this, 'readyState', { value: 4, writable: false });
+                Object.defineProperty(this, 'status', { value: 200, writable: false });
+                Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
+                
+                if (this.onreadystatechange) this.onreadystatechange();
+                if (this.onload) this.onload();
+            }).catch(error => {
+                console.error('[IRON-CLAD] XHR.prototype Error:', error);
+                return originalSend.apply(this, arguments);
+            });
+            
+            return;
+        }
+        
+        return originalSend.apply(this, arguments);
+    };
+    
+    async function handleConfigRequest(url) {
+        console.log('[IRON-CLAD] 🚀 handleConfigRequest called for:', url);
+        try {
+            // Load real API configuration from shelf data
+            const apiResponse = await originalFetch('/shelf_config_from_api.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (apiResponse.ok) {
+                const apiConfig = await apiResponse.json();
+                console.log('[IRON-CLAD] ✅ Real shelf API config loaded');
+
+                // Add EXACTLY the fields that conf2.umd.min.js expects for shelf
+                apiConfig.productId = 2000003;
+                apiConfig.type = "shelf";
+                // NO component field - original doesn't have it!
+
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[IRON-CLAD] ✅ Wardrobe config loaded for Russian translations');
+
+                    // Merge Russian translations into API config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to API config
+                        apiConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        console.log('[IRON-CLAD] ✅ Russian translations merged into shelf config');
+                        console.log('[IRON-CLAD] 🔍 Translation keys count:', Object.keys(wardrobeConfig.settings.translations).length);
+                    }
+                }
+
+                console.log('[IRON-CLAD] ✅ Shelf config ready with Russian translations');
+                console.log('[IRON-CLAD] 🔍 Final config keys:', Object.keys(apiConfig));
+
+                return new Response(JSON.stringify(apiConfig), {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8'
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('[IRON-CLAD] Error:', error);
+            throw error;
+        }
+    }
+    
+    async function handleConfigRequestForXHR(url) {
+        console.log('[IRON-CLAD] 🚀 handleConfigRequestForXHR called for:', url);
+        try {
+            // Load real API configuration from shelf data
+            const apiResponse = await originalFetch('/shelf_config_from_api.json', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+
+            if (apiResponse.ok) {
+                const apiConfig = await apiResponse.json();
+                console.log('[IRON-CLAD] ✅ Real shelf API config loaded for XHR');
+
+                // Add EXACTLY the fields that conf2.umd.min.js expects for shelf
+                apiConfig.productId = 2000003;
+                apiConfig.type = "shelf";
+                // NO component field - original doesn't have it!
+
+                // Load wardrobe config for Russian translations
+                const wardrobeResponse = await originalFetch('/wardrobe_config_rubles.json', {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (wardrobeResponse.ok) {
+                    const wardrobeConfig = await wardrobeResponse.json();
+                    console.log('[IRON-CLAD] ✅ Wardrobe config loaded for Russian translations XHR');
+
+                    // Merge Russian translations into API config
+                    if (wardrobeConfig.settings && wardrobeConfig.settings.translations) {
+                        // Add Russian translations to API config
+                        apiConfig.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        // Set up window.translations for conf2.umd.min.js
+                        window.translations = {
+                            "en": wardrobeConfig.settings.translations
+                        };
+
+                        console.log('[IRON-CLAD] ✅ Russian translations merged into shelf config XHR');
+                    }
+                }
+
+                console.log('[IRON-CLAD] ✅ Shelf config ready with Russian translations XHR');
+                console.log('[IRON-CLAD] 🔍 Final config keys for XHR:', Object.keys(apiConfig));
+
+                return JSON.stringify(apiConfig);
+            }
+        } catch (error) {
+            console.error('[IRON-CLAD] XHR Error:', error);
+            throw error;
+        }
+    }
+    
+    console.log('[IRON-CLAD] ✅ Iron-Clad Interceptor ready');
+})();
+</script>
+
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="csrf-token" content="is5RrZJQnYyW7i0qj7VzxvQKUsUfdPklSelkUgi3">
+<meta name="og:title" content="Design your own bookcase | Bespoke shelving configurator by Pickawood™">
+<meta name="keywords" content="">
+<meta name="description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+<meta name="og:description" content="Try our 3D shelving configurator and design bespoke bookcases, hanging shelfs or other shelving units | Set height, width and depth between 30 and 600cm">
+
+<title>Design your own bookcase | Bespoke shelving configurator by Pickawood™</title>
+
+<link rel="stylesheet" href="/css/app.css?id=41943a493838b4792795c3463ab0003b" type="text/css" media="screen">
+<style>* { box-sizing: border-box; } body {margin: 0;}</style>
+
+<script>
+// EXACT window.conf2config from original - NO component field!
+window.conf2config = {
+    "productId": 2000003,
+    "countryId": 16,
+    "locale": "en",
+    "type": "shelf",
+    "configurationId": "66ee895bd1034bde9ed7f200c0332261",
+    "configurationUrl": "https://www.pickawood.com/en/load-configuration/66ee895bd1034bde9ed7f200c0332261",
+    "configUrl": "https://condor.pickawood.com/configuration/2000003/en/GB",
+    "configurationSaveUrl": "/en/configurator",
+    "configurationCartUrl": "/en/cart/configuration",
+    "cartUrl": "https://www.pickawood.com/en/cart",
+    "configurationLoadUrl": "/en/configurator",
+    "configuratorEntryList": {
+        "items": [
+            {
+                "product": "shelf",
+                "type": "configurable",
+                "hash": "66ee895bd1034bde9ed7f200c0332261",
+                "image": {
+                    "default": {
+                        "path": "https://images.pickawood.com/data/nettece-2021/Site_structure/conf_entry_items/product_images/product_regale_737x414.png",
+                        "width": 737,
+                        "height": 414,
+                        "alt": "Shelving"
+                    }
+                },
+                "title": "Shelving",
+                "text": "Quality craftsmanship from the experts",
+                "link": "https://www.pickawood.com/en/configurator/66ee895bd1034bde9ed7f200c0332261"
+            }
+        ]
+    },
+    "resources": {
+        "phone": "0330 80 848 70",
+        "email": "support@pickawood.com",
+        "appointmentUrl": "/en/appointment"
+    }
+};
+
+window.isProduction = true;
+window.conf2config.noLimits = false; // EXACTLY like original
+
+console.log('[IRON-CLAD] 🔧 window.conf2config set:', window.conf2config);
+</script>
+
+</head>
+<body>
+    <!-- Preloader -->
+    <div id="preloader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="width: 50px; height: 50px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p>Loading Shelf Configurator...</p>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <article>
+                <h1>3D Bookcase & Shelving Configurator</h1>
+                <h2>Design your own bookcase</h2>
+                
+                <div id="configurator-container" style="min-height: 600px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <p style="text-align: center; color: #6c757d; font-size: 18px;">
+                        🏗️ Shelf Configurator will appear here...
+                    </p>
+                </div>
+            </article>
+        </div>
+    </main>
+    
+    <!-- Load Vue.js first -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script defer src="/js/conf2.umd.min.js?id=84dac4f25cc416e009e009428de29a47"></script>
+    
+    <!-- Initialization Script -->
+    <script>
+        // Global error handler to catch Canvas errors
+        window.addEventListener('error', function(e) {
+            if (e.message.includes('drawImage') && e.message.includes('CanvasRenderingContext2D')) {
+                console.warn('[IRON-CLAD] Canvas error (non-critical):', e.message);
+                e.preventDefault(); // Prevent the error from breaking the app
+                return false;
+            }
+        });
+        
+        window.addEventListener('load', function() {
+            console.log('[IRON-CLAD] 📄 Page loaded');
+            console.log('[IRON-CLAD] 📄 Vue:', window.Vue ? '✅' : '❌');
+            console.log('[IRON-CLAD] 📄 conf2config:', window.conf2config);
+            
+            // Hide preloader after a short delay
+            setTimeout(function() {
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    preloader.style.display = 'none';
+                }
+            }, 2000);
+            
+            // Check if conf2 loaded
+            setTimeout(function() {
+                console.log('[IRON-CLAD] 🔍 Checking conf2 after 3 seconds...');
+                
+                if (window.conf2) {
+                    console.log('[IRON-CLAD] ✅ window.conf2 found!');
+                    console.log('[IRON-CLAD] 📋 conf2 keys:', Object.keys(window.conf2));
+                    
+                    // Try to initialize configurator
+                    try {
+                        if (window.conf2.init) {
+                            console.log('[IRON-CLAD] 🚀 Initializing configurator...');
+                            window.conf2.init();
+                        }
+                    } catch (error) {
+                        console.error('[IRON-CLAD] Configurator init error:', error);
+                    }
+                } else {
+                    console.log('[IRON-CLAD] ❌ window.conf2 not found');
+                }
+            }, 3000);
+        });
+    </script>
+
+</body>
+</html>
+
